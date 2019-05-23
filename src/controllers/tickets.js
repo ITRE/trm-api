@@ -270,18 +270,21 @@ exports.check_thread = async function(req, res, next) {
     await Ticket.find({'thread_id': req.body.responses[i].ticket.thread_id}, function (err, ticket) {
       if (err) {
   			req.body.new.push(req.body.responses[i]);
-        return
+        return ticket
       } else {
         dupes = [...ticket.log]
         dupes.filter(log => (log.message_id === req.body.responses[i].log.message_id))
         console.log(dupes)
         if (dupes.length > 0) {
-          return
+          return ticket
         }
         req.body.old.push(req.body.responses[i]);
-        return
+        return ticket
       }
-    }).catch(function(err) { console.error('error ignored') })
+    }).catch(function(err) {
+      console.error('error ignored')
+      return err
+    })
   }
   console.log('sorted')
   return next()
