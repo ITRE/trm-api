@@ -61,6 +61,8 @@ module.exports = function(app) {
       console.log(req.body)
       res.send('booooy!')
     })
+    .get(email.fetch_responses, tickets.list_tickets)
+
 
 /* Error Handler */
   app.use(function (err, req, res, next) {
