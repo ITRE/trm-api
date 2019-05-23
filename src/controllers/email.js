@@ -1,3 +1,4 @@
+
 const nodemailer = require('nodemailer')
 const googleAuth = require('google-auth-library')
 const {auth} = require('google-auth-library')
@@ -100,8 +101,6 @@ async function fetchResponse(id) {
     'id': id
   })
 
-  console.log(response.data)
-  
   let ticket = {
     user: '',
     staff: '',
@@ -133,16 +132,17 @@ async function fetchResponse(id) {
     }
   }
 
-  for (let part of response.data.payload.parts) {
-    if (part.filename && part.filename.length > 0) {
-      log.attachments = true
-    } else if (!part.body.data) {
-      continue
-    } else {
-      log.desc += Base64.decode(part.body.data)
+  if (response.data.payload.parts) {
+    for (let part of response.data.payload.parts) {
+      if (part.filename && part.filename.length > 0) {
+        log.attachments = true
+      } else if (!part.body.data) {
+        continue
+      } else {
+        log.desc += Base64.decode(part.body.data)
+      }
     }
   }
-
   return {ticket, log}
 }
 
@@ -156,7 +156,7 @@ exports.fetch_responses = function(req, res, next) {
   .then(fetchMail)
   .then(response => {
     req.body.responses = response
-    console.log('fetched')
+    console.log('fetched', req.body.responses.length)
     return next()
   })
   .catch(err => {
