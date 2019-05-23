@@ -8,26 +8,25 @@ const { Base64 } = require('js-base64')
 const mongoose = require('mongoose')
 const User = mongoose.model('User')
 const Admin = mongoose.model('Admin')
-const config = require('../config/email')
 
 /*
 *   Gmail Generic Client Functions
 */
 
 const authClient = new googleAuth.OAuth2Client(
-  config.client_id,
-  config.client_secret,
-  config.redirect_uri
+  process.env.client,
+  process.env.secret,
+  process.env.redirect
 )
 
 async function authenticate() {
   authClient.setCredentials({
-     refresh_token: config.refresh_token
+     refresh_token: process.env.refresh
   })
   const tokens = await authClient.getAccessToken()
   authClient.setCredentials({
     access_token: tokens.token,
-    refresh_token: config.refresh_token
+    refresh_token: process.env.refresh
   })
   return authClient
 }
@@ -211,7 +210,7 @@ exports.send_reset = function(req, res, next) {
       .then(client => {
         sendMail({
           to: req.body.user,
-          from: config.email,
+          from: process.env.email,
           subject: 'Password Reset',
           message: `You are recieving this email because you requested a reset of your password.
             <br />
@@ -244,7 +243,7 @@ exports.request_download = function(req, res, next) {
     authenticate()
     .then(client => {
       sendMail({
-        to: config.email,
+        to: process.env.email,
         from: req.body.kind.email,
         subject: 'Request for TRM',
         message: `This is an automated request from the website for access to TRM.
