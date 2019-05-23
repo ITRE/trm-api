@@ -61,7 +61,9 @@ module.exports = function(app) {
       console.log(req.body)
       res.send('booooy!')
     })
-    .get(email.fetch_responses, tickets.list_tickets)
+    .get(email.fetch_responses, tickets.check_thread, function(req, res) {
+    	return res.status(200).send({status: "running", data: req.body})
+    })
 
 
 /* Error Handler */
