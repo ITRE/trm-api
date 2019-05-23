@@ -99,6 +99,9 @@ async function fetchResponse(id) {
     'userId': 'me',
     'id': id
   })
+
+  console.log(response.data)
+  
   let ticket = {
     user: '',
     staff: '',
