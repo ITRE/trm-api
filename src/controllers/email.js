@@ -13,23 +13,6 @@ const Admin = mongoose.model('Admin')
 *   Gmail Generic Client Functions
 */
 
-
-const keysEnvVar = process.env['CREDS'];
-if (!keysEnvVar) {
-  throw new Error('The $CREDS environment variable was not found!');
-}
-const keys = JSON.parse(keysEnvVar);
-const client = auth.fromJSON(keys);
-
-async function JSONauthenticate() {
-  // load the JWT or UserRefreshClient from the keys
-  client.scopes = ['https://www.googleapis.com/auth/cloud-platform'];
-  const url = `https://www.googleapis.com/dns/v1/projects/${keys.project_id}`;
-  const res = await client.request({url});
-  console.log(res.data);
-  return client
-}
-
 const authClient = new googleAuth.OAuth2Client(
   process.env.client,
   process.env.secret,
@@ -52,7 +35,7 @@ async function authenticate() {
 async function sendMail(email) {
   const gmail = google.gmail({
     version: 'v1',
-    auth: client
+    auth: authClient
   })
 
   const subject = 'Re: ' + email.subject
@@ -166,7 +149,7 @@ async function fetchResponse(id) {
 
 // Get New Messages
 exports.fetch_responses = function(req, res, next) {
-  JSONauthenticate()
+  authenticate()
   .then(fetchMail)
   .then(response => {
     req.body.responses = response
