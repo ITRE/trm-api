@@ -7,11 +7,11 @@ const Other = mongoose.model('Other')
 
 const validateTicket = (input) => {
   if (input === null || !input) {
-    return ['error', {name:'Missing'}]
+    return ['error', {name:'Missing', missing: 'No Ticket Data'}]
 	} else if(validator.isEmpty(input.user) || validator.isEmpty(input.subject)) {
-    return ['error', {name:'Missing'}]
+    return ['error', {name:'Missing', missing: 'Ticket Field'}]
 	} else if(!validator.isEmail(input.user)) {
-    return ['error', {name:'EmailError'}]
+    return ['error', {name:'EmailError', provided: input.user}]
   } else {
     let validatedDoc = {
       user: '',
@@ -49,9 +49,9 @@ const validateTicket = (input) => {
 
 const validateLog = (input) => {
   if (input === null || !input) {
-    return ['error', {name:'Missing'}]
+    return ['error', {name:'Missing', missing: 'No Message Data'}]
   } else if(validator.isEmpty(input.type) || validator.isEmpty(input.staff) || validator.isEmpty(input.note)) {
-    return ['error', {name:'Missing'}]
+    return ['error', {name:'Missing', missing: 'Log Field'}]
   } else {
     let validatedDoc = {
       type: '',
@@ -84,17 +84,51 @@ const validateLog = (input) => {
 const parseEmail = (ticket, log) => {
   let parsedTicket = ticket;
   let parsedLog = log;
-  const string = ticket.user; // Your string containing
-  const regex = /<(.*)>/g; // The actual regex
-  const matches = regex.exec(string);
-  parsedTicket.user = matches[1];
+  const regex_email = /<(.*)>/g;
+  const regex_name  = /Name: (.*)./g;
+  const regex_title = /Title: (.*)./g;
+  const regex_org   = /Organization: (.*)./g;
+  const regex_use   = /Use: (.*)./g;
+
+  const user = regex_email.exec(ticket.user);
+  if (user) {
+    // gets email if the gmail is formatted "Some Name <name@email.com>"
+    parsedTicket.user = user[1]
+  } else {
+    parsedTicket.user = ticket.user
+  }
+  if(!validator.isEmail(parsedTicket.user)) {
+    return ['error', {name:'EmailError', provided: parsedTicket.user}]
+  }
+
   if (ticket.subject === 'Request for TRM' || ticket.subject === 'Re: Request for TRM' || ticket.subject === 'Fwd: Request for TRM') {
     parsedTicket.kind = 'Download';
     let desc = h2p(log.desc);
-    parsedLog.name = /Name: (.*)./g.exec(desc)[1];
-    parsedLog.title = /Title: (.*)./g.exec(desc)[1];
-    parsedLog.organization = /Organization: (.*)./g.exec(desc)[1];
-    parsedLog.use = /Use: (.*)./g.exec(desc)[1];
+    parsedLog.note = desc;
+    const name = regex_name.exec(desc);
+    const title = regex_title.exec(desc);
+    const org = regex_org.exec(desc);
+    const use = regex_use.exec(desc);
+    if (name) {
+      parsedLog.name = name[1]
+    } else {
+      return ['error', {name:'Missing', missing: 'Name of Requestor', provided:desc}]
+    }
+    if (title) {
+      parsedLog.title = title[1]
+    } else {
+      return ['error', {name:'Missing', missing: 'Title of Requestor', provided:desc}]
+    }
+    if (org) {
+      parsedLog.organization = org[1]
+    } else {
+      return ['error', {name:'Missing', missing: 'Organization of Requestor', provided:desc}]
+    }
+    if (use) {
+      parsedLog.use = use[1]
+    } else {
+      return ['error', {name:'Missing', missing: 'Intended Use', provided:desc}]
+    }
   } else {
     parsedTicket.kind = 'Other';
     if(h2p(log.desc)) {
@@ -105,7 +139,7 @@ const parseEmail = (ticket, log) => {
       parsedLog.use = 'Message Was Blank';
     }
   }
-  return {parsedTicket, parsedLog}
+  return ['success', {parsedTicket, parsedLog}]
 }
 
 const validateSubTicket = (kind, input) => {
@@ -135,16 +169,16 @@ const validateSubTicket = (kind, input) => {
       validatedDoc.desc = validator.blacklist(validatedDoc.desc, '$')
       break
     default:
-      return 'Error'
+      return ['error', {name:'Missing'}]
   }
-  return validatedDoc
+  return ['success', validatedDoc]
 }
 
 
 exports.new_request = function(req, res, next) {
 	let validatedDoc = validateSubTicket(req.body.ticket.kind, req.body.kind)
-  if (validatedDoc == 'Error') {
-    return next({name:'Missing'})
+  if (validatedDoc[0] == 'error') {
+    return next(validatedDoc[1])
   }
   let sub_ticket
   switch (req.body.ticket.kind) {
@@ -219,7 +253,7 @@ exports.list_tickets = function(req, res, next) {
 			err.name = 'FindError'
       return next(err)
     }
-    return res.status(200).send({success: true, data: docs})
+    return res.status(200).send({success: true, data: docs, user:req.body.loggedIn, token: req.body.token})
   })
 }
 
@@ -263,108 +297,67 @@ exports.delete_tickets = function(req, res, next) {
 *****************************/
 
 exports.check_thread = async function(req, res, next) {
-  console.log('sorting...')
-  req.body.new = [];
-  req.body.old = [];
+//  if (req.body.responses.length)
   for (let i = 0; i < req.body.responses.length; i++) {
-    await Ticket.find({'thread_id': req.body.responses[i].ticket.thread_id}, function (err, ticket) {
-      if (err) {
-  			req.body.new.push(req.body.responses[i]);
-        return ticket
-      } else {
-        dupes = [...ticket.log]
-        dupes.filter(log => (log.message_id === req.body.responses[i].log.message_id))
-        console.log(dupes)
-        if (dupes.length > 0) {
-          return ticket
-        }
-        req.body.old.push(req.body.responses[i]);
-        return ticket
+    console.log('sorting...')
+    let doc = await Ticket.find({'thread_id': req.body.responses[i].ticket.thread_id}).limit(1)
+    if (doc.length > 0) {
+// handle update
+      console.log('updating...')
+      let validatedEmail = parseEmail(req.body.responses[i].ticket, req.body.responses[i].log)
+      if (validatedEmail[0] == 'error') {
+        return next(validatedEmail[1])
       }
-    }).catch(function(err) {
-      console.error('error ignored')
-      return err
-    })
-  }
-  console.log('sorted')
-  return next()
-}
-
-exports.update_tickets = async function(req, res, next) {
-  if (!req.body.old) {
-    console.log('no old')
-    return next()
-  } else if (req.body.old.length <= 0) {
-    console.log('not enough old')
-    return next()
-  }
-  console.log('updating...')
-
-  for (let i = 0; i < req.body.old.length; i++) {
-    let {parsedTicket, parsedLog} = parseEmail(req.body.old[i].ticket, req.body.old[i].log)
-    let validatedLog = validateLog(parsedLog)
-    if (validatedLog[0] == 'error') {
-      return next(validatedLog[1])
-    }
-    console.log(parsedTicket.thread_id)
-
-    await Ticket.findOneAndUpdate(
-      {"thread_id": parsedTicket.thread_id},
-      { $push: {log: validatedLog[1]} },
-      { upsert: true, new: true }, function (err, ticket) {
-      if (err) {
+      let {parsedTicket, parsedLog} = validatedEmail[1]
+      let validatedLog = validateLog(parsedLog)
+      if (validatedLog[0] == 'error') {
+        return next(validatedLog[1])
+      }
+      doc[0].log.push(validatedLog[1])
+      try {
+        let tic = await doc[0].save()
+      } catch (err) {
         return next(err)
-      } else {
-        return
       }
-    }).catch(function(err) { return next(err) })
-
-  }
-  console.log('updated')
-  return next()
-}
-
-
-exports.new_tickets = async function(req, res, next) {
-  if (!req.body.new) {
-    console.log('no new')
-    return next()
-  } else if (req.body.new.length <= 0) {
-    console.log('not enough new')
-    return next()
-  }
-  console.log('adding...')
-
-  for (let i = 0; i < req.body.new.length; i++) {
-    let {parsedTicket, parsedLog} = parseEmail(req.body.new[i].ticket, req.body.new[i].log)
-    console.log('parsed:', parsedTicket)
-    console.log('parsed:', parsedLog)
-    let validatedDoc = validateSubTicket(parsedTicket.kind, parsedLog)
-    if (validatedDoc == 'Error') {
-      return next({name:'Missing'})
-    }
-    let sub_ticket
-    switch (parsedTicket.kind) {
-      case "Download":
-        sub_ticket = new Download(validatedDoc)
-        break
-      case "Other":
-        sub_ticket = new Other(validatedDoc)
-        break
-      default:
-        return next({name:'Kind'})
-    }
-    try {
-      let doc = await sub_ticket.save()
-      validatedDoc = validateTicket(parsedTicket)
+      console.log('updated')
+    } else {
+// add to db
+      console.log('adding...')
+      let validatedEmail = parseEmail(req.body.responses[i].ticket, req.body.responses[i].log)
+      if (validatedEmail[0] == 'error') {
+        return next(validatedEmail[1])
+      }
+      let {parsedTicket, parsedLog} = validatedEmail[1]
+      let validatedDoc = validateSubTicket(parsedTicket.kind, parsedLog)
       if (validatedDoc[0] == 'error') {
         return next(validatedDoc[1])
       }
-      validatedDoc[1].info = doc._id
-      const new_ticket = new Ticket(validatedDoc[1]);
-      let tic = await new_ticket.save()
-    } catch (err) {
-      return next(err)
+      let sub_ticket
+      switch (parsedTicket.kind) {
+        case "Download":
+          sub_ticket = new Download(validatedDoc[1])
+          break
+        case "Other":
+          sub_ticket = new Other(validatedDoc[1])
+          break
+        default:
+          return next({name:'Kind'})
+      }
+      try {
+        let doc = await sub_ticket.save()
+        validatedDoc = validateTicket(parsedTicket)
+        if (validatedDoc[0] == 'error') {
+          return next(validatedDoc[1])
+        }
+        validatedDoc[1].info = doc._id
+        const new_ticket = new Ticket(validatedDoc[1]);
+        let tic = await new_ticket.save()
+      } catch (err) {
+        return next(err)
+      }
+      console.log('added')
     }
+    console.log('sorted')
   }
+  return next()
 }

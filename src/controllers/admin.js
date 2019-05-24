@@ -122,15 +122,12 @@ exports.login_admin = function(req, res, next) {
         }, config.secret, {
           expiresIn: '1h'
         })
-        return res.status(200).send({
-          success: true,
-          message: "Successfully logged in.",
-          token: token,
-          user:{
-            name: req.user.name,
-            email: req.user.email
-          }
-        })
+        req.body.loggedIn = {
+          name: req.user.name,
+          email: req.user.email
+        }
+        req.body.token = token
+        return next()
       })
     }
   })(req, res, next)

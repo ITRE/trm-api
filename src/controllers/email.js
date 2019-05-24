@@ -76,20 +76,26 @@ async function fetchMail() {
     version: 'v1',
     auth: authClient
   })
-
+// get ID list
   const list = await gmail.users.messages.list({
     'userId': 'me',
     'q': 'is:unread'
   })
   let response = []
-
-  for (let message of list.data.messages) {
-    let res = await fetchResponse(message.id)
-    response.push(res)
+  let ids = []
+  if(list.data.messages) {
+    for (let message of list.data.messages) {
+      ids.push(message.id)
+      let res = await fetchResponse(message.id)
+      response.push(res)
+    }
+    await batchMarkRead(ids)
   }
+
   return response
 }
 
+// Get mail by id
 async function fetchResponse(id) {
   const gmail = google.gmail({
     version: 'v1',
@@ -142,9 +148,29 @@ async function fetchResponse(id) {
         log.desc += Base64.decode(part.body.data)
       }
     }
+  } else if (response.data.payload.body.data) {
+    log.desc = Base64.decode(response.data.payload.body.data)
+  } else {
+    console.log(response.data)
   }
   return {ticket, log}
 }
+
+async function batchMarkRead(ids) {
+  const gmail = google.gmail({
+    version: 'v1',
+    auth: authClient
+  })
+  await gmail.users.messages.batchModify({
+    'userId': 'me',
+    'resource': {
+      'ids': ids,
+      'removeLabelIds': ['UNREAD']
+    }
+  }).catch(err => console.log(err))
+  return
+}
+
 
 /*
 *   Email Route Functions

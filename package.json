@@ -20,6 +20,8 @@
     "validator": "^10.11.0"
   },
   "scripts": {
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "mongo-start": "docker-compose up -d",
+    "mongo-stop": "docker-compose down"
   }
 }

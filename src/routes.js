@@ -43,14 +43,14 @@ module.exports = function(app) {
     .get(tickets.list_admin_tickets)
 
   app.route('/login')
-    .post(admin.login_admin)
+    .post(admin.login_admin, email.fetch_responses, tickets.check_thread, tickets.list_tickets)
     .get(email.send_reset)
     .put(admin.login_reset)
 
   app.route('/messages')
     .put(email.send_response, tickets.update_request)
     .post(email.request_download, tickets.new_request)
-    .get(email.fetch_responses, tickets.check_thread, tickets.update_tickets, tickets.new_tickets, tickets.list_tickets)
+    .get(email.fetch_responses, tickets.check_thread, tickets.list_tickets)
 
   app.route('/testing')
     .post(function(req, res, next) {
@@ -61,8 +61,8 @@ module.exports = function(app) {
       console.log(req.body)
       res.send('booooy!')
     })
-    .get(email.fetch_responses, function(req, res) {
-    	return res.status(200).send({status: "running", data: req.body})
+    .get(email.fetch_responses, tickets.check_thread, function(req, res) {
+    	return res.status(200).send({status: "running"})
     })
 
 
