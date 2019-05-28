@@ -169,7 +169,7 @@ const validateSubTicket = (kind, input) => {
       validatedDoc.desc = validator.blacklist(validatedDoc.desc, '$')
       break
     default:
-      return ['error', {name:'Missing'}]
+      return ['error', {name:'Missing', missing: "No Valid Kind"}]
   }
   return ['success', validatedDoc]
 }

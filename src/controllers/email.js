@@ -265,7 +265,7 @@ exports.send_reset = function(req, res, next) {
 // Send Password Reset
 exports.request_download = function(req, res, next) {
   if (req.body === null || !req.body) {
-    return next({name:'Missing'})
+    return next({name:'Missing', provided: req})
   } else if(!validator.isEmail(req.body.kind.email)) {
     return next({name:'EmailError'})
   } else {
