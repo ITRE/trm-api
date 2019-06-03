@@ -129,10 +129,13 @@ async function fetchResponse(id) {
     switch (head.name) {
       case 'From':
         ticket.user = head.value
+        break;
       case 'Subject':
         ticket.subject = head.value
+        break;
       case 'Date':
         log.date = head.value
+        break;
       default:
         continue;
     }
