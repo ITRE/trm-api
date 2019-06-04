@@ -79,6 +79,14 @@ module.exports = function(app) {
           request: req.body
         })
         break;
+      case 'ValidatorError':
+        return res.status(409).send({
+          success: false,
+          error: err,
+          msg: `Validation failed on the ${err.type}. Please check that an appropriate value was provided.`,
+          request: req.body
+        })
+        break;
       case 'EmailError':
         return res.status(409).send({
           success: false,
