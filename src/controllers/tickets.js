@@ -219,8 +219,8 @@ exports.update_request = function(req, res, next) {
   if (validatedLog[0] == 'error') {
     return next(validatedLog[1])
   }
-  Ticket.findOneAndUpdate({
-    "_id": req.params.id},
+  Ticket.findOneAndUpdate(
+    {"_id": req.params.id},
     { $set: validatedDoc[1], $push: {log: validatedLog[1]} },
     { upsert: true, new: true }
   )

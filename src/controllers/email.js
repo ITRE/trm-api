@@ -218,10 +218,12 @@ exports.send_response = function(req, res, next) {
         next()
       })
       .catch(err => {
+        err.name = "EmailError"
         return next(err)
       })
     })
     .catch(err => {
+      err.name = "AuthError"
       return next(err)
     })
   }

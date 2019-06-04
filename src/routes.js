@@ -75,63 +75,72 @@ module.exports = function(app) {
         return res.status(409).send({
           success: false,
           error: err,
-          msg: "An error occurred while attempting to update this resource. Please check than all fields have been filled and that the ObjectID is correct."
+          msg: "An error occurred while attempting to update this resource. Please check than all fields have been filled and that the ObjectID is correct.",
+          request: req.body
         })
         break;
       case 'EmailError':
         return res.status(409).send({
           success: false,
           error: err,
-          msg: "The email provided for this user was not valid. Please check your spelling and try again."
+          msg: "The email provided for this user was not valid. Please check your spelling and try again.",
+          request: req.body
         })
         break;
       case 'ResetNotValid':
         return res.status(409).send({
           success: false,
           error: err,
-          msg: "Your password could not be updated. Please consult your administrator for more information on this error."
+          msg: "Your password could not be updated. Please consult your administrator for more information on this error.",
+          request: req.body
         })
         break;
       case 'Mail':
         return res.status(500).send({
           success: false,
           error: err,
-          msg: "The server was unable to send an email to your address. Please consult your administrator for more information on this error."
+          msg: "The server was unable to send an email to your address. Please consult your administrator for more information on this error.",
+          request: req.body
         })
         break;
       case 'FindError':
         return res.status(404).send({
           success: false,
           error: err,
-          msg: "This ID does not match any registered. Please double check the Json Web Token payload."
+          msg: "This ID does not match any registered. Please double check the Json Web Token payload.",
+          request: req.body
         })
         break;
       case 'WrongPass':
         return res.status(403).send({
           success: false,
           error: err,
-          msg: "The password entered for this user is incorrect. Please check your spelling and try again."
+          msg: "The password entered for this user is incorrect. Please check your spelling and try again.",
+          request: req.body
         })
         break;
       case 'AuthError':
         return res.status(403).send({
           success: false,
           error: err,
-          msg: "The credentials for this user were not accepted. Please check your spelling and try again."
+          msg: "The credentials for this user were not accepted. Please check your spelling and try again.",
+          request: req.body
         })
         break;
       case 'PassHash':
         return res.status(500).send({
           success: false,
           error: err,
-          msg: "There was an error hashing the provided password."
+          msg: "There was an error hashing the provided password.",
+          request: req.body
         })
         break;
       case 'Missing':
         return res.status(400).send({
           success: false,
           error: err,
-          msg: "This request was missing a parameter"
+          msg: "This request was missing a parameter",
+          request: req.body
         })
         break;
       default:
