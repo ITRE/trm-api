@@ -138,7 +138,8 @@ module.exports = function(app) {
         return res.status(500).send({
           success: false,
           error: err,
-          msg: "Sorry, something's gone wrong. " + err
+          msg: "Sorry, something's gone wrong. " + err,
+          request: req.body
         })
     }
   })
