@@ -197,6 +197,8 @@ exports.fetch_responses = function(req, res, next) {
 exports.send_response = function(req, res, next) {
   if (req.body === null || !req.body) {
     return next({name:'Missing'})
+	} else if (req.body.email === false) {
+    return next()
 	} else if(validator.isEmpty(req.body.ticket.user) || validator.isEmpty(req.body.ticket.subject) || validator.isEmpty(req.body.log.note)) {
     return next({name:'Missing'})
 	} else if(!validator.isEmail(req.body.ticket.user)) {
