@@ -11,7 +11,7 @@ const validateTicket = (input) => {
 	} else if(validator.isEmpty(input.user) || validator.isEmpty(input.subject)) {
     return ['error', {name:'Missing', missing: 'Ticket Field'}]
 	} else if(!validator.isEmail(input.user)) {
-    return ['error', {name:'ValidatorError', type:'Email'}]
+    return ['error', {name:'ValidatorError', type:'Email', attempt: input.user}]
   } else {
     let validatedDoc = {
       user: '',
@@ -98,7 +98,7 @@ const parseEmail = (ticket, log) => {
     parsedTicket.user = ticket.user
   }
   if(!validator.isEmail(parsedTicket.user)) {
-    return ['error', {name:'ValidatorError', type:'Email'}]
+    return ['error', {name:'ValidatorError', type:'Email', attempt: parsedTicket.user}]
   }
 
   if (ticket.subject === 'Request for TRM' || ticket.subject === 'Re: Request for TRM' || ticket.subject === 'Fwd: Request for TRM') {

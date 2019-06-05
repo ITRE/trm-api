@@ -202,7 +202,7 @@ exports.send_response = function(req, res, next) {
 	} else if(validator.isEmpty(req.body.ticket.user) || validator.isEmpty(req.body.ticket.subject) || validator.isEmpty(req.body.log.note)) {
     return next({name:'Missing'})
 	} else if(!validator.isEmail(req.body.ticket.user)) {
-    return next({name:'ValidatorError', type:'email'})
+    return next({name:'ValidatorError', type:'email', attempt: req.body.ticket.user})
   } else {
     authenticate()
     .then(client => {
@@ -274,7 +274,7 @@ exports.request_download = function(req, res, next) {
   if (req.body === null || !req.body) {
     return next({name:'Missing', provided: req})
   } else if(!validator.isEmail(req.body.kind.email)) {
-    return next({name:'ValidatorError', type:'email'})
+    return next({name:'ValidatorError', type:'email', attempt: req.body.kind.email})
   } else {
     authenticate()
     .then(client => {
