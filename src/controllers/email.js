@@ -219,6 +219,12 @@ exports.send_response = function(req, res, next) {
       })
       .catch(err => {
         err.name = "EmailError"
+        err.sent = {
+          user: req.body.ticket.user,
+          subject: req.body.ticket.subject,
+          message: req.body.log.note,
+          thread_id: req.body.ticket.thread_id ? req.body.ticket.thread_id : ''
+        }
         return next(err)
       })
     })
