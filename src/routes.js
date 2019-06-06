@@ -48,7 +48,9 @@ module.exports = function(app) {
     .put(admin.login_reset)
 
   app.route('/messages')
-    .put(email.send_response, tickets.update_request)
+    .put(email.send_download, function(req, res) {
+    	return res.status(200).send({status: "running"})
+    })
     .post(email.request_download, tickets.new_request)
     .get(email.fetch_responses, tickets.check_thread, tickets.list_tickets)
 

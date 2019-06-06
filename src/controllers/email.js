@@ -5,10 +5,29 @@ const {auth} = require('google-auth-library')
 const validator = require('validator')
 const {google} = require('googleapis')
 const { Base64 } = require('js-base64')
+const fs = require("fs")
+const path = require("path")
 
 const mongoose = require('mongoose')
 const User = mongoose.model('User')
 const Admin = mongoose.model('Admin')
+
+const downloads = fs.readFileSync(path.resolve(__dirname,"../download/smaller.zip"))
+
+function checkFileSize (file) {
+  var stats = fs.statSync(path.resolve(__dirname, file))
+  var fileSizeInBytes = stats["size"]
+  //Convert the file size to megabytes
+  return (fileSizeInBytes / 1000000.0)
+}
+
+/*
+* Define Exponential Backoff Timer
+*/
+
+const delay = ms => new Promise(res => setTimeout(res, ms))
+let backoffTime = 1
+
 
 /*
 *   Gmail Generic Client Functions
@@ -48,7 +67,7 @@ async function sendMail(email) {
     `MIME-Version: 1.0`,
     `Subject: ${utf8Subject}`,
     ``,
-    email.message,
+    email.message
   ]
   const message = messageParts.join('\n')
 
@@ -68,6 +87,84 @@ async function sendMail(email) {
   })
   console.log(res.data)
   return res.data
+}
+
+// Send email with attachment
+async function sendData(email, backoffTime = 1) {
+  const gmail = google.gmail({
+    version: 'v1',
+    auth: authClient
+  })
+
+  const subject = 'Re: ' + email.subject
+  const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`
+  const messageParts = [
+    `From: ${Base64.encode(email.from)}`,
+    `To: ${Base64.encode(email.to)}`,
+    `Content-Type: multipart/mixed; boundary="boundary"`,
+    `MIME-Version: 1.0`,
+    `Subject: ${Base64.encode('Re: ' + email.subject)}`,
+    ``,
+    `--boundary`,
+    `Content-Type: text/html; charset=utf-8`,
+    Base64.encode(email.message),
+    ``,
+    `--boundary`,
+    `Content-Type: video/x-ms-wmv`,
+    `Content-Transfer-Encoding: base64`,
+    `Content-Disposition: attachment; filename="test.wmv"`,
+    Base64.encode(downloads),
+    `--boundary`
+  ]
+  const test = [
+    `From: ${email.from}`,
+    `To: ${email.to}`,
+    `Content-Type: multipart/mixed; boundary="boundary"`,
+    `MIME-Version: 1.0`,
+    `Subject: ${'Re: ' + email.subject}`,
+    ``,
+    `--boundary`,
+    `Content-Type: text/html; charset=utf-8`,
+    email.message,
+    ``,
+    `--boundary`,
+    `Content-Type: application/zip`,
+    `Content-Transfer-Encoding: base64`,
+    `Content-Disposition: attachment; filename="smaller.zip"`,
+    downloads,
+    `--boundary`
+  ]
+  const message = messageParts.join('\n')
+  const test2 = test.join('\n')
+/*
+  // The body needs to be base64url encoded.
+  const encodedMessage = Buffer.from(message)
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+
+console.log(encodedMessage)
+
+console.log(Base64.encode(message))
+*/
+
+const encodedMessage = Base64.encode(message)
+
+  const res = await gmail.users.messages.send({
+    'userId': 'me',
+    'resource': {
+      'threadID': email.thread_id
+    },
+    'media': {
+      'mimeType': 'message/rfc822',
+      'body': test2
+    }
+  })
+  //console.log(res.data)
+  return res.data
+
+
 }
 
 // Get new emails
@@ -277,7 +374,7 @@ exports.send_reset = function(req, res, next) {
   })
 }
 
-// Send Password Reset
+// Request Download
 exports.request_download = function(req, res, next) {
   if (req.body === null || !req.body) {
     return next({name:'Missing', provided: req})
@@ -310,6 +407,76 @@ exports.request_download = function(req, res, next) {
       })
     })
     .catch(err => {
+      return next(err)
+    })
+  }
+}
+
+
+function test(message, backoffTime = 1) {
+  sendData({
+    to: req.body.ticket.user,
+    from: 'me',
+    subject: req.body.ticket.subject,
+    message: req.body.log.note,
+    thread_id: req.body.ticket.thread_id ? req.body.ticket.thread_id : ''
+  }).then(response => {
+    console.log('sent!', response)
+    req.body.ticket.thread_id = response.threadId
+    req.body.log.message_id = response.id
+    return
+  })
+  .catch(err => {
+    backoff(backoffTime);
+    test(fileId, (backoffTime * 2))
+  })
+}
+
+
+// Send Download
+exports.send_download = function(req, res, next) {
+  if (req.body === null || !req.body) {
+    return next({name:'Missing'})
+	} else if (req.body.email === false) {
+    return next()
+	} else if(validator.isEmpty(req.body.ticket.user) || validator.isEmpty(req.body.ticket.subject) || validator.isEmpty(req.body.log.note)) {
+    return next({name:'Missing'})
+	} else if(!validator.isEmail(req.body.ticket.user)) {
+    return next({name:'ValidatorError', type:'email', attempt: req.body.ticket.user})
+  } else {
+    authenticate()
+    .then(client => {
+      sendData({
+        to: req.body.ticket.user,
+        from: 'me',
+        subject: req.body.ticket.subject,
+        message: req.body.log.note,
+        thread_id: req.body.ticket.thread_id ? req.body.ticket.thread_id : ''
+      }).then(response => {
+        console.log('sent!', response)
+        req.body.ticket.thread_id = response.threadId
+        req.body.log.message_id = response.id
+        next()
+      })
+      .catch(err => {
+        backoffTime *= 2
+        console.log(err)
+        return delay(backoffTime)
+        /*
+        err.name = "EmailError"
+        err.sent = {
+          to: req.body.ticket.user,
+          from: 'me',
+          subject: req.body.ticket.subject,
+          message: req.body.log.note,
+          thread_id: req.body.ticket.thread_id ? req.body.ticket.thread_id : ''
+        }
+        return next(err)
+        */
+      })
+    })
+    .catch(err => {
+      err.name = "AuthError"
       return next(err)
     })
   }
