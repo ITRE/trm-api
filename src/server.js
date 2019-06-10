@@ -1,4 +1,4 @@
-//require('dotenv').config()
+require('dotenv').config()
 const express = require('express')
 const app = express()
 const port = process.env.PORT || 8000
@@ -18,7 +18,7 @@ const routes = require('./routes')
 const config = require('./config/database')
 
 mongoose.Promise = global.Promise;
-mongoose.connect(config.database, { useNewUrlParser: true }).then(console.log, console.error);
+mongoose.connect(config.local, { useNewUrlParser: true }).then(console.log, console.error);
 
 var corsOptions = {
   origin: ['http://localhost:3000', 'http://localhost:3001'],

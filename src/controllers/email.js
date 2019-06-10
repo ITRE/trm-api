@@ -58,7 +58,7 @@ async function sendMail(email) {
     auth: authClient
   })
 
-  const subject = 'Re: ' + email.subject
+  const subject = email.subject
   const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`
   const messageParts = [
     `From: ${email.from}`,
@@ -99,24 +99,6 @@ async function sendData(email, backoffTime = 1) {
   const subject = 'Re: ' + email.subject
   const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`
   const messageParts = [
-    `From: ${Base64.encode(email.from)}`,
-    `To: ${Base64.encode(email.to)}`,
-    `Content-Type: multipart/mixed; boundary="boundary"`,
-    `MIME-Version: 1.0`,
-    `Subject: ${Base64.encode('Re: ' + email.subject)}`,
-    ``,
-    `--boundary`,
-    `Content-Type: text/html; charset=utf-8`,
-    Base64.encode(email.message),
-    ``,
-    `--boundary`,
-    `Content-Type: video/x-ms-wmv`,
-    `Content-Transfer-Encoding: base64`,
-    `Content-Disposition: attachment; filename="test.wmv"`,
-    Base64.encode(downloads),
-    `--boundary`
-  ]
-  const test = [
     `From: ${email.from}`,
     `To: ${email.to}`,
     `Content-Type: multipart/mixed; boundary="boundary"`,
@@ -135,21 +117,6 @@ async function sendData(email, backoffTime = 1) {
     `--boundary`
   ]
   const message = messageParts.join('\n')
-  const test2 = test.join('\n')
-/*
-  // The body needs to be base64url encoded.
-  const encodedMessage = Buffer.from(message)
-    .toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-
-console.log(encodedMessage)
-
-console.log(Base64.encode(message))
-*/
-
-const encodedMessage = Base64.encode(message)
 
   const res = await gmail.users.messages.send({
     'userId': 'me',
@@ -158,13 +125,11 @@ const encodedMessage = Base64.encode(message)
     },
     'media': {
       'mimeType': 'message/rfc822',
-      'body': test2
+      'body': message
     }
   })
   //console.log(res.data)
   return res.data
-
-
 }
 
 // Get new emails
@@ -390,6 +355,8 @@ exports.request_download = function(req, res, next) {
         message: `This is an automated request from the website for access to TRM.
           <br />
           Name: ${req.body.kind.name}
+          <br />
+          Email: ${req.body.kind.email}
           <br />
           Organization: ${req.body.kind.organization}
           <br />

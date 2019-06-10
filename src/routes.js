@@ -49,7 +49,7 @@ module.exports = function(app) {
 
   app.route('/messages')
     .put(email.send_download, (req, res) => res.status(200).send({status: "download sent"}) )
-    .post(email.request_download, (req, res) => res.status(200).send({status: "request sent"}) )
+    .post(email.request_download, (req, res) => res.status(200).send({status: "request sent", request: req.body.response}) )
     .get(email.fetch_responses, tickets.check_thread, tickets.list_tickets)
 
   app.route('/messages/:id')

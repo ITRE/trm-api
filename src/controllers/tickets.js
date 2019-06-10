@@ -85,6 +85,7 @@ const parseEmail = (ticket, log) => {
   let parsedTicket = ticket;
   let parsedLog = log;
   const regex_email = /<(.*)>/g;
+  const regex_email_desc = /Email: (.*)./g;
   const regex_name  = /Name: (.*)./g;
   const regex_title = /Title: (.*)./g;
   const regex_org   = /Organization: (.*)./g;
@@ -96,9 +97,6 @@ const parseEmail = (ticket, log) => {
     parsedTicket.user = user[1]
   } else {
     parsedTicket.user = ticket.user
-  }
-  if(!validator.isEmail(parsedTicket.user)) {
-    return ['error', {name:'ValidatorError', type:'Email', attempt: parsedTicket.user}]
   }
 
   if (ticket.subject === 'Request for TRM' || ticket.subject === 'Re: Request for TRM' || ticket.subject === 'Fwd: Request for TRM') {
@@ -129,7 +127,22 @@ const parseEmail = (ticket, log) => {
     } else {
       return ['error', {name:'Missing', missing: 'Intended Use', provided:desc}]
     }
+
+    if(!validator.isEmail(parsedTicket.user) || parsedTicket.user == 'itre-information@ncsu.edu') {
+      const email = regex_email_desc.exec(desc);
+      if (!email) {
+        return ['error', {name:'Missing', missing: 'Name of Requestor', provided:desc}]
+      } else if (!validator.isEmail(email[1])) {
+        return ['error', {name:'ValidatorError', type:'Email', attempt: parsedTicket.user}]
+      } else {
+        parsedTicket.user = email[1]
+      }
+    }
   } else {
+    if(!validator.isEmail(parsedTicket.user)) {
+      return ['error', {name:'ValidatorError', type:'Email', attempt: parsedTicket.user}]
+    }
+
     parsedTicket.kind = 'Other';
     if(h2p(log.desc)) {
       parsedLog.note = h2p(log.desc);
@@ -139,6 +152,8 @@ const parseEmail = (ticket, log) => {
       parsedLog.use = 'Message Was Blank';
     }
   }
+
+
   return ['success', {parsedTicket, parsedLog}]
 }
 
