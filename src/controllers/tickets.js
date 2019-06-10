@@ -239,6 +239,7 @@ exports.update_request = function(req, res, next) {
     { $set: validatedDoc[1], $push: {log: validatedLog[1]} },
     { upsert: true, new: true }
   )
+  .populate('info')
   .exec(function(err, ticket) {
     if (err) {
 			err.name = 'UpdateError'

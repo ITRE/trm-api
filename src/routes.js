@@ -57,7 +57,7 @@ module.exports = function(app) {
     .put(admin.login_reset)
 
   app.route('/messages')
-    .put(files.get_version, email.send_download, (req, res) => res.status(200).send({status: "download sent"}) )
+    //.put(files.get_version, email.send_download, (req, res) => res.status(200).send({status: "download sent"}) )
     .post(email.request_download, (req, res) => res.status(200).send({status: "request sent", request: req.body.response}) )
     .get(email.fetch_responses, tickets.check_thread, tickets.list_tickets)
 
