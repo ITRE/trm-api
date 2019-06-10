@@ -86,7 +86,7 @@ exports.delete_admin = function(req, res, next) {
       if (err) {
   			return next(err)
   		}
-      res.json({ message: 'All Admins Successfully Deleted' })
+      return res.status(200).send({ message: 'All Admins Successfully Deleted' })
     })
   } else if(validator.isEmpty(req.params.id)) {
     return next({name:'Missing'})
@@ -97,7 +97,7 @@ exports.delete_admin = function(req, res, next) {
       if (err) {
   			return next(err)
   		}
-      res.json({ message: 'Admin successfully deleted' })
+      return res.status(200).send({ message: 'Admin successfully deleted' })
     })
   }
 }

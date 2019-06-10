@@ -291,7 +291,7 @@ exports.delete_tickets = function(req, res, next) {
       if (err) {
   			return next(err)
   		}
-      res.json({ message: 'All Tickets Successfully Deleted' })
+      return res.status(200).send({ message: 'All Tickets Successfully Deleted' })
     })
   } else if(validator.isEmpty(req.params.id)) {
     return next({name:'Missing'})
@@ -302,7 +302,7 @@ exports.delete_tickets = function(req, res, next) {
       if (err) {
   			return next(err)
   		}
-      res.json({ message: 'Ticket successfully deleted' })
+      return res.status(200).send({ message: 'Ticket successfully deleted' })
     })
   }
 }

@@ -10,7 +10,7 @@ function generateToken(user) {
 }
 
 const validateUser = (user) => {
-  if (input === null || !input) {
+  if (user === null || !user) {
     return ['error', {name:'Missing', missing: 'No Message Data'}]
   } else if(validator.isEmpty(user.email)
               || validator.isEmpty(user.name)
@@ -78,6 +78,7 @@ exports.create_user = function(req, res, next) {
     if (err) {
       return next(err)
     } else {
+      console.log('User Created')
       return next()
     }
   })
@@ -135,22 +136,22 @@ exports.update_user = function(req, res, next) {
 
 exports.delete_user = function(req, res, next) {
   if (req.params.id === 'all') {
-    User.remove({}, function(err, user) {
+    User.deleteMany({}, function(err, user) {
       if (err) {
   			return next(err)
   		}
-      res.json({ message: 'All Users Successfully Deleted' })
+      return res.status(200).send({ message: 'All Users Successfully Deleted' })
     })
   } else if(validator.isEmpty(req.params.id) || !validator.isEmail(req.params.id)) {
     return next({name:'Missing'})
   } else {
-    User.remove({
+    User.deleteOne({
       "email": req.params.id
     }, function(err, user) {
       if (err) {
   			return next(err)
   		}
-      res.json({ message: 'User successfully deleted' })
+      return res.status(200).send({ message: 'User successfully deleted' })
     })
   }
 }

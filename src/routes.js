@@ -8,15 +8,24 @@ module.exports = function(app) {
 	const tickets = require('./controllers/tickets')
 	const admin = require('./controllers/admin')
 	const email = require('./controllers/email')
+	const files = require('./controllers/files')
 
   app.route('/')
 		.get(function(req, res) {
     	return res.status(200).send({status: "running"})
     })
 
+  app.route('/version')
+    .post(files.new_version)
+    .get(files.get_version, (req, res) => res.status(200).send({success: true, data: req.body.files}))
+
+  app.route('/version/:id')
+    .get(files.get_specific_version)
+    .delete(files.delete_files)
+
   app.route('/users')
-    .post(users.create_user)
     .get(users.list_users)
+    .post(users.create_user)
 
   app.route('/users/:id')
     .get(users.view_user)
@@ -48,12 +57,12 @@ module.exports = function(app) {
     .put(admin.login_reset)
 
   app.route('/messages')
-    .put(email.send_download, (req, res) => res.status(200).send({status: "download sent"}) )
+    .put(files.get_version, email.send_download, (req, res) => res.status(200).send({status: "download sent"}) )
     .post(email.request_download, (req, res) => res.status(200).send({status: "request sent", request: req.body.response}) )
     .get(email.fetch_responses, tickets.check_thread, tickets.list_tickets)
 
   app.route('/messages/:id')
-    .put(users.create_user, tickets.update_request)
+    .put(users.create_user, files.get_version, email.send_download, tickets.update_request)
 
 
   app.route('/testing')
@@ -121,6 +130,14 @@ module.exports = function(app) {
           error: err,
           msg: "This ID does not match any registered. Please double check the Json Web Token payload.",
           request: req.body
+        })
+        break;
+      case 'FileError':
+        return res.status(404).send({
+          success: false,
+          error: err,
+          msg: "The current download version could not be retrieved from Google Drive. Please check the fileID and the permissions for the ticket account.",
+          request: req.body.files
         })
         break;
       case 'WrongPass':

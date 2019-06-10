@@ -9,10 +9,14 @@ const cors = require('cors')
 const passport = require('passport')
 
 const User = require('./models/user')
+
 const Admin = require('./models/admin')
+
 const Ticket = require('./models/ticket')
 const Download = require('./models/tickets/download')
 const Other = require('./models/tickets/other')
+
+const Files = require('./models/files')
 
 const routes = require('./routes')
 const config = require('./config/database')

@@ -12,15 +12,6 @@ const mongoose = require('mongoose')
 const User = mongoose.model('User')
 const Admin = mongoose.model('Admin')
 
-const downloads = fs.readFileSync(path.resolve(__dirname,"../download/smaller.zip"))
-
-function checkFileSize (file) {
-  var stats = fs.statSync(path.resolve(__dirname, file))
-  var fileSizeInBytes = stats["size"]
-  //Convert the file size to megabytes
-  return (fileSizeInBytes / 1000000.0)
-}
-
 /*
 * Define Exponential Backoff Timer
 */
@@ -49,6 +40,18 @@ async function authenticate() {
     refresh_token: process.env.refresh
   })
   return authClient
+}
+
+async function getFiles(id) {
+  const drive = google.drive({
+    version: 'v3',
+    auth: authClient
+  })
+  if (!drive) {
+    return ['error', {name: 'AuthError'}]
+  }
+  const file = await drive.files.get(id);
+  return ['success', file]
 }
 
 // Send email
@@ -90,12 +93,22 @@ async function sendMail(email) {
 }
 
 // Send email with attachment
-async function sendData(email, backoffTime = 1) {
+async function sendData(email, files, backoffTime = 1) {
   const gmail = google.gmail({
     version: 'v1',
     auth: authClient
   })
-
+  if (!gmail) {
+    return ['error', {name: 'AuthError'}]
+  }
+  if (!files) {
+    return ['error', {name: 'Missing', type: 'No File Info Provided'}]
+  }
+  console.log(files)
+  const file = await getFiles({fileId: files.fileID}).catch(err=>{
+    return ['error', {name: 'FileError', response: err}]
+  })
+//drive.google.com/file/d/15FyXi1fZx8gaxocBsYiXgaI-tnpsDTak/view?usp=sharing
   const subject = 'Re: ' + email.subject
   const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`
   const messageParts = [
@@ -107,15 +120,17 @@ async function sendData(email, backoffTime = 1) {
     ``,
     `--boundary`,
     `Content-Type: text/html; charset=utf-8`,
-    email.message,
-    ``,
-    `--boundary`,
-    `Content-Type: application/zip`,
-    `Content-Transfer-Encoding: base64`,
-    `Content-Disposition: attachment; filename="smaller.zip"`,
-    downloads,
-    `--boundary`
+    `Thank you for requesting the Triangle Regional Management tool. <br />
+    Attached are the requested files. <br />
+    Please direct any questions or issues to this email address. <br />
+    Thank you!  <br /> <br />`
   ]
+  if (file[0] === 'success') {
+    console.log(file[1].data)
+    messageParts.push(`https://drive.google.com/open?id=${file[1].data.id}`)
+  } else {
+    return ['error', {name: 'FileError', response: file}]
+  }
   const message = messageParts.join('\n')
 
   const res = await gmail.users.messages.send({
@@ -128,8 +143,11 @@ async function sendData(email, backoffTime = 1) {
       'body': message
     }
   })
+  if (!res.data) {
+    return ['error', {name: 'Mail'}]
+  }
   //console.log(res.data)
-  return res.data
+  return ['success', res.data]
 }
 
 // Get new emails
@@ -419,27 +437,20 @@ exports.send_download = function(req, res, next) {
         subject: req.body.ticket.subject,
         message: req.body.log.note,
         thread_id: req.body.ticket.thread_id ? req.body.ticket.thread_id : ''
-      }).then(response => {
-        console.log('sent!', response)
-        req.body.ticket.thread_id = response.threadId
-        req.body.log.message_id = response.id
-        next()
+      }, req.body.files).then(response => {
+        if (response[0] === 'success') {
+          console.log('Download Sent')
+          req.body.ticket.thread_id = response[1].threadId
+          req.body.log.message_id = response[1].id
+          next()
+        } else {
+          next(response[1])
+        }
       })
       .catch(err => {
         backoffTime *= 2
         console.log(err)
         return delay(backoffTime)
-        /*
-        err.name = "EmailError"
-        err.sent = {
-          to: req.body.ticket.user,
-          from: 'me',
-          subject: req.body.ticket.subject,
-          message: req.body.log.note,
-          thread_id: req.body.ticket.thread_id ? req.body.ticket.thread_id : ''
-        }
-        return next(err)
-        */
       })
     })
     .catch(err => {
