@@ -48,11 +48,13 @@ module.exports = function(app) {
     .put(admin.login_reset)
 
   app.route('/messages')
-    .put(email.send_download, function(req, res) {
-    	return res.status(200).send({status: "running"})
-    })
-    .post(email.request_download, tickets.new_request)
+    .put(email.send_download, (req, res) => res.status(200).send({status: "download sent"}) )
+    .post(email.request_download, (req, res) => res.status(200).send({status: "request sent"}) )
     .get(email.fetch_responses, tickets.check_thread, tickets.list_tickets)
+
+  app.route('/messages/:id')
+    .put(users.create_user, tickets.update_request)
+
 
   app.route('/testing')
     .post(function(req, res, next) {
