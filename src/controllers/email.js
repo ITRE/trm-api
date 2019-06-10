@@ -5,8 +5,6 @@ const {auth} = require('google-auth-library')
 const validator = require('validator')
 const {google} = require('googleapis')
 const { Base64 } = require('js-base64')
-const fs = require("fs")
-const path = require("path")
 
 const mongoose = require('mongoose')
 const User = mongoose.model('User')
@@ -109,21 +107,24 @@ async function sendData(email, files, backoffTime = 1) {
     return ['error', {name: 'FileError', response: err}]
   })
 //drive.google.com/file/d/15FyXi1fZx8gaxocBsYiXgaI-tnpsDTak/view?usp=sharing
-  const subject = 'Re: ' + email.subject
-  const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`
+  let to = []
+  if (email.cc) {
+    to.push(`CC: ${email.cc}`)
+  }
+  if (email.bcc) {
+    to.push(`BCC: ${email.bcc}`)
+  }
+  if (email.to) {
+    to.push(`To: ${email.to}`)
+  }
   const messageParts = [
     `From: ${email.from}`,
-    `To: ${email.to}`,
+    to,
     `Content-Type: multipart/mixed; boundary="boundary"`,
     `MIME-Version: 1.0`,
-    `Subject: ${'Re: ' + email.subject}`,
+    `Subject: ${email.subject}`,
     ``,
-    `--boundary`,
-    `Content-Type: text/html; charset=utf-8`,
-    `Thank you for requesting the Triangle Regional Management tool. <br />
-    Attached are the requested files. <br />
-    Please direct any questions or issues to this email address. <br />
-    Thank you!  <br /> <br />`
+    email.message
   ]
   if (file[0] === 'success') {
     console.log(file[1].data)
@@ -371,17 +372,17 @@ exports.request_download = function(req, res, next) {
         from: req.body.kind.email,
         subject: 'Request for TRM',
         message: `This is an automated request from the website for access to TRM.
-          <br />
-          Name: ${req.body.kind.name}
-          <br />
-          Email: ${req.body.kind.email}
-          <br />
-          Organization: ${req.body.kind.organization}
-          <br />
-          Title: ${req.body.kind.title}
-          <br />
-          Use: ${req.body.kind.use}
-          <br />`
+
+Name: ${req.body.kind.name}
+
+Email: ${req.body.kind.email}
+
+Organization: ${req.body.kind.organization}
+
+Title: ${req.body.kind.title}
+
+Use: ${req.body.kind.use}
+`
       }).then(response => {
         req.body.response = response
         req.body.ticket.thread_id = response.threadId;
@@ -396,27 +397,6 @@ exports.request_download = function(req, res, next) {
     })
   }
 }
-
-
-function test(message, backoffTime = 1) {
-  sendData({
-    to: req.body.ticket.user,
-    from: 'me',
-    subject: req.body.ticket.subject,
-    message: req.body.log.note,
-    thread_id: req.body.ticket.thread_id ? req.body.ticket.thread_id : ''
-  }).then(response => {
-    console.log('sent!', response)
-    req.body.ticket.thread_id = response.threadId
-    req.body.log.message_id = response.id
-    return
-  })
-  .catch(err => {
-    backoff(backoffTime);
-    test(fileId, (backoffTime * 2))
-  })
-}
-
 
 // Send Download
 exports.send_download = function(req, res, next) {
@@ -435,13 +415,69 @@ exports.send_download = function(req, res, next) {
         to: req.body.ticket.user,
         from: 'me',
         subject: req.body.ticket.subject,
-        message: req.body.log.note,
+        message: `Thank you for requesting the Triangle Regional Management tool.
+Attached are the requested files.
+
+Please do not respond to this email.
+
+Thank you!
+
+`,
         thread_id: req.body.ticket.thread_id ? req.body.ticket.thread_id : ''
       }, req.body.files).then(response => {
         if (response[0] === 'success') {
           console.log('Download Sent')
           req.body.ticket.thread_id = response[1].threadId
           req.body.log.message_id = response[1].id
+          next()
+        } else {
+          next(response[1])
+        }
+      })
+      .catch(err => {
+        backoffTime *= 2
+        console.log(err)
+        return delay(backoffTime)
+      })
+    })
+    .catch(err => {
+      err.name = "AuthError"
+      return next(err)
+    })
+  }
+}
+
+// Send Updated Download
+exports.send_new_download = function(req, res, next) {
+  if (req.body === null || !req.body) {
+    return next({name:'Missing'})
+	} else if (req.body.email === false) {
+    next()
+  } else {
+    let users = []
+    for (let i=0; i<req.body.users.length;i++) {
+      users.push(req.body.users[i].email)
+    }
+    authenticate()
+    .then(client => {
+      sendData({
+        bcc: users,
+        from: 'me',
+        subject: `New Download - Version ${req.body.files.version}`,
+        message: `As a user of the Triangle Regional Management tool, we wanted to let you know about our latest update.
+
+Attached are the files for version ${req.body.files.version}.
+
+We hope you'll find it better than ever.
+
+
+Please do not respond to this email.
+
+`,
+        thread_id: ''
+      }, req.body.files).then(response => {
+        if (response[0] === 'success') {
+          console.log('Download Sent')
           next()
         } else {
           next(response[1])

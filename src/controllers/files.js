@@ -24,8 +24,9 @@ exports.new_version = function(req, res, next) {
         return next(err)
       } else {
         console.log('New Version Added')
-        return res.status(200).send({success: true, data: file})
+        req.body.files = file
       }
+      return next()
     })
 	}
 }

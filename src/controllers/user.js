@@ -85,12 +85,16 @@ exports.create_user = function(req, res, next) {
 }
 
 exports.list_users = function(req, res, next) {
+  if (req.body.email === false) {
+    next()
+  }
   User.find({})
     .exec(function(err, doc) {
       if (err) {
         return next({name:'FindError'})
       }
-      return res.status(200).send({success: true, data: doc})
+      req.body.users = doc
+      next()
   })
 }
 

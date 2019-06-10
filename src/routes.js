@@ -16,7 +16,7 @@ module.exports = function(app) {
     })
 
   app.route('/version')
-    .post(files.new_version)
+    .post(files.new_version, users.list_users, email.send_new_download, (req, res) => res.status(200).send({status: "download sent"}) )
     .get(files.get_version, (req, res) => res.status(200).send({success: true, data: req.body.files}))
 
   app.route('/version/:id')
@@ -24,7 +24,7 @@ module.exports = function(app) {
     .delete(files.delete_files)
 
   app.route('/users')
-    .get(users.list_users)
+    .get(users.list_users, (req, res) => res.status(200).send({success: true, data: req.body.users}) )
     .post(users.create_user)
 
   app.route('/users/:id')
