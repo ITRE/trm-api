@@ -269,7 +269,13 @@ exports.list_tickets = function(req, res, next) {
 			err.name = 'FindError'
       return next(err)
     }
-    return res.status(200).send({success: true, data: docs, user:req.body.loggedIn, token: req.body.token})
+    return res.status(200).send({
+      success: true,
+      data: docs,
+      user:req.body.loggedIn,
+      users: req.body.users,
+      token: req.body.token
+    })
   })
 }
 
