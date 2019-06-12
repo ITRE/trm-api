@@ -27,6 +27,31 @@ passport.use(new LocalStrategy(
   }
 ))
 
+passport.use('new-admin', new LocalStrategy({
+  usernameField: 'admin',
+  passwordField: 'adminPass'
+},
+  function(username, password, done) {
+    Admins.findOne({ username: username }, function (err, user) {
+      if (err) {
+        return done(err);
+      } else if (!user) {
+        return done(null, false, { name: 'FindError' });
+      } else {
+        user.comparePassword(password, (err, match) => {
+          if (err) {
+            return done(err)
+          } else if (!match) {
+            return done(null, false, {name: 'WrongPass'})
+          } else {
+            return done(null, user)
+          }
+        })
+      }
+    })
+  }
+))
+
 
 const jwtOptions = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderWithScheme('JWT'),

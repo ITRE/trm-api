@@ -57,16 +57,25 @@ exports.list_admins = function(req, res, next) {
 }
 
 exports.create_admin = function(req, res, next) {
-  let validatedAdmin = validateAdmin(req.body)
-  const new_doc = new Admin(validatedAdmin)
-  new_doc.save(function(err, doc) {
+  passport.authenticate('new-admin', {session: false}, (err, user, info) => {
     if (err) {
+      console.log('authentication error at login')
       return next(err)
+    } else if (!user) {
+      return next(info)
     } else {
-      console.log('Admin Created')
-      return next()
+      let validatedAdmin = validateAdmin(req.body)
+      const new_doc = new Admin(validatedAdmin)
+      new_doc.save(function(err, doc) {
+        if (err) {
+          return next(err)
+        } else {
+          console.log('Admin Created')
+          return next()
+        }
+      })
     }
-  })
+  })(req, res, next)
 }
 
 exports.update_admin = function(req, res, next) {
