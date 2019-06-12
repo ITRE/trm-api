@@ -43,7 +43,7 @@ module.exports = function(app) {
     .delete(tickets.delete_tickets)
 
   app.route('/admin')
-    .post(admin.create_admin)
+    .post(admin.create_admin, admin.login_admin, email.fetch_responses, tickets.check_thread, tickets.list_tickets)
     .get(admin.list_admins)
 
   app.route('/admin/:id')

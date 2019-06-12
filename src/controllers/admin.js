@@ -63,7 +63,8 @@ exports.create_admin = function(req, res, next) {
     if (err) {
       return next(err)
     } else {
-      return res.status(201).send({success: true, data: doc})
+      console.log('Admin Created')
+      return next()
     }
   })
 }
