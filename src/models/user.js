@@ -8,6 +8,10 @@ const UserSchema = new Schema({
     type: String,
     unique: true
   },
+  joined: {
+    type: Date,
+    default: Date.now
+  },
   organization: String,
   title: String,
   use: String
