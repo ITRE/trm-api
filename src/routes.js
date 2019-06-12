@@ -52,7 +52,7 @@ module.exports = function(app) {
     .get(tickets.list_admin_tickets)
 
   app.route('/login')
-    .post(admin.login_admin, email.fetch_responses, tickets.check_thread, tickets.list_tickets)
+    .post(admin.login_admin, email.fetch_responses, tickets.check_thread, users.list_users, tickets.list_tickets)
     .get(email.send_reset)
     .put(admin.login_reset)
 
