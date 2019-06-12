@@ -208,7 +208,15 @@ async function fetchResponse(id) {
 
   for (let head of response.data.payload.headers) {
     switch (head.name) {
+      case 'Auto-Submitted':
+        ticket = {skip:true}
+        return {ticket, log}
+        break
       case 'From':
+        if (head.value.includes('google')){
+          ticket = {skip:true}
+          return {ticket, log}
+        }
         ticket.user = head.value
         break;
       case 'Subject':

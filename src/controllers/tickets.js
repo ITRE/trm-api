@@ -316,6 +316,10 @@ exports.check_thread = async function(req, res, next) {
 //  if (req.body.responses.length)
   for (let i = 0; i < req.body.responses.length; i++) {
     console.log('sorting...')
+    if (req.body.responses[i].ticket.skip) {
+      console.log('spam message skipped')
+      continue
+    }
     let doc = await Ticket.find({'thread_id': req.body.responses[i].ticket.thread_id}).limit(1)
     if (doc.length > 0) {
 // handle update
