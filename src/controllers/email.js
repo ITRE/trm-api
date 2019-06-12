@@ -270,6 +270,9 @@ async function batchMarkRead(ids) {
 
 // Get New Messages
 exports.fetch_responses = function(req, res, next) {
+  if(req.body.loggedIn.role !== 'Admin') {
+    return next()
+  }
   authenticate()
   .then(fetchMail)
   .then(response => {

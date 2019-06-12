@@ -313,6 +313,9 @@ exports.delete_tickets = function(req, res, next) {
 *****************************/
 
 exports.check_thread = async function(req, res, next) {
+  if(req.body.loggedIn.role !== 'Admin') {
+    return next()
+  }
 //  if (req.body.responses.length)
   for (let i = 0; i < req.body.responses.length; i++) {
     console.log('sorting...')
