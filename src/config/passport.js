@@ -9,6 +9,7 @@ passport.use(new LocalStrategy(
   function(username, password, done) {
     Admins.findOne({ username: username }, function (err, user) {
       if (err) {
+        err.name="AuthError"
         return done(err);
       } else if (!user) {
         return done(null, false, { name: 'FindError' });
@@ -34,6 +35,7 @@ passport.use('new-admin', new LocalStrategy({
   function(username, password, done) {
     Admins.findOne({ username: username }, function (err, user) {
       if (err) {
+        err.name="AuthError"
         return done(err);
       } else if (!user) {
         return done(null, false, { name: 'FindError' });
@@ -61,6 +63,7 @@ const jwtOptions = {
 const jwtLogin = new JwtStrategy(jwtOptions, function(auth, done) {
   Admins.findOne({"username": auth.user}, function(err, user) {
     if (err) {
+      err.name="AuthError"
       return done(err, false);
     } else if (user) {
       done(null, user);
