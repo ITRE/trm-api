@@ -16,7 +16,11 @@ function generateToken(admin) {
 const validateAdmin = (info) => {
   if (info === null || !info) {
     return next({name:'Missing'})
-  } else if(validator.isEmpty(info.username) || validator.isEmpty(info.role) || validator.isEmpty(info.name) || validator.isEmpty(info.email) || validator.isEmpty(info.password)) {
+  } else if(validator.isEmpty(info.username)
+            || validator.isEmpty(info.role)
+            || validator.isEmpty(info.name)
+            || validator.isEmpty(info.email)
+            || validator.isEmpty(info.password)) {
     return next({name:'Missing'})
   } else if(!validator.isEmail(info.email)) {
     return next({name:'EmailError'})
@@ -124,8 +128,10 @@ exports.login_admin = function(req, res, next) {
           expiresIn: '1h'
         })
         req.body.loggedIn = {
+          username: req.user.username,
           name: req.user.name,
-          email: req.user.email
+          email: req.user.email,
+          role: req.user.role
         }
         req.body.token = token
         return next()
