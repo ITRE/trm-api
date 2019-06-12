@@ -16,7 +16,7 @@ function generateToken(admin) {
 const validateAdmin = (info) => {
   if (info === null || !info) {
     return next({name:'Missing'})
-  } else if(validator.isEmpty(info.username) || validator.isEmpty(info.name) || validator.isEmpty(info.email) || validator.isEmpty(info.password)) {
+  } else if(validator.isEmpty(info.username) || validator.isEmpty(info.role) || validator.isEmpty(info.name) || validator.isEmpty(info.email) || validator.isEmpty(info.password)) {
     return next({name:'Missing'})
   } else if(!validator.isEmail(info.email)) {
     return next({name:'EmailError'})
@@ -25,6 +25,7 @@ const validateAdmin = (info) => {
       username: '',
       name: '',
       email: '',
+      role: info.role,
       password: info.password
     }
 

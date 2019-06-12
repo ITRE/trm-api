@@ -14,6 +14,7 @@ const AdminSchema = new Schema({
     unique: true,
     Required: 'Please enter your email address'
   },
+  role: String,
   password: {
     type: String,
     Required: 'Please enter a memorable password'
