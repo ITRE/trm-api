@@ -25,7 +25,7 @@ mongoose.Promise = global.Promise;
 mongoose.connect(config.database, { useNewUrlParser: true }).then(console.log, console.error);
 
 var corsOptions = {
-  origin: ['http://localhost:3000', 'https://trm.netlify.com/'],
+  origin: ['http://localhost:3000', 'https://trm.netlify.com'],
   optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
   credentials: true,
   methods: ['GET', 'PUT', 'POST'],
