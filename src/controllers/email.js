@@ -80,7 +80,7 @@ async function sendMail(email) {
     .replace(/=+$/, '');
 
   const res = await gmail.users.messages.send({
-    'userId': 'me',
+    'userId': process.env.email,
     'resource': {
       'raw': encodedMessage,
       'threadID': email.thread_id
@@ -135,7 +135,7 @@ async function sendData(email, files, backoffTime = 1) {
   const message = messageParts.join('\n')
 
   const res = await gmail.users.messages.send({
-    'userId': 'me',
+    'userId': process.env.email,
     'resource': {
       'threadID': email.thread_id
     },
@@ -159,7 +159,7 @@ async function fetchMail() {
   })
 // get ID list
   const list = await gmail.users.messages.list({
-    'userId': 'me',
+    'userId': process.env.email,
     'q': 'is:unread'
   })
   let response = []
@@ -184,7 +184,7 @@ async function fetchResponse(id) {
   })
 
   const response = await gmail.users.messages.get({
-    'userId': 'me',
+    'userId': process.env.email,
     'id': id
   })
 
@@ -254,7 +254,7 @@ async function batchMarkRead(ids) {
     auth: authClient
   })
   await gmail.users.messages.batchModify({
-    'userId': 'me',
+    'userId': process.env.email,
     'resource': {
       'ids': ids,
       'removeLabelIds': ['UNREAD']
@@ -300,7 +300,7 @@ exports.send_response = function(req, res, next) {
     .then(client => {
       sendMail({
         to: req.body.ticket.user,
-        from: 'me',
+        from: process.env.email,
         subject: req.body.ticket.subject,
         message: req.body.log.note,
         thread_id: req.body.ticket.thread_id ? req.body.ticket.thread_id : ''
@@ -314,7 +314,7 @@ exports.send_response = function(req, res, next) {
         err.name = "EmailError"
         err.sent = {
           to: req.body.ticket.user,
-          from: 'me',
+          from: process.env.email,
           subject: req.body.ticket.subject,
           message: req.body.log.note,
           thread_id: req.body.ticket.thread_id ? req.body.ticket.thread_id : ''
@@ -456,7 +456,7 @@ exports.send_download = function(req, res, next) {
     .then(client => {
       sendData({
         to: req.body.ticket.user,
-        from: 'me',
+        from: process.env.email,
         subject: req.body.ticket.subject,
         message: `Thank you for requesting the Triangle Regional Management tool.
           <br />
@@ -505,7 +505,7 @@ exports.send_new_download = function(req, res, next) {
     .then(client => {
       sendData({
         bcc: users,
-        from: 'me',
+        from: process.env.email,
         subject: `New Download - Version ${req.body.files.version}`,
         message: `As a user of the Triangle Regional Management tool, we wanted to let you know about our latest update.
           <br />
