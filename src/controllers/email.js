@@ -402,9 +402,9 @@ exports.request_help = function(req, res, next) {
 exports.request_download = function(req, res, next) {
   if (req.body === null || !req.body) {
     return next({name:'Missing', provided: req})
-  } else if(!req.body.kind.email)
-            || !req.body.kind.organization)
-            || !req.body.kind.title)
+  } else if(!req.body.kind.email
+            || !req.body.kind.organization
+            || !req.body.kind.title
             || !req.body.kind.use) {
     return next({name:'Missing'})
 	} else if(!validator.isEmail(req.body.kind.email)) {
