@@ -25,7 +25,7 @@ mongoose.Promise = global.Promise;
 mongoose.connect(config.database, { useNewUrlParser: true }).then(console.log, console.error);
 
 var corsOptions = {
-  origin: ['http://localhost:3000', process.env.client],
+  origin: ['http://localhost:3000', process.env.app],
   optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
   credentials: true,
   methods: ['GET', 'PUT', 'POST'],
