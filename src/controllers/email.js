@@ -373,7 +373,9 @@ exports.send_reset = function(req, res, next) {
 exports.request_help = function(req, res, next) {
   if (req.body === null || !req.body) {
     return next({name:'Missing', provided: req})
-  } else if(!validator.isEmail(req.body.email)) {
+  } else if(validator.isEmpty(req.body.email) || validator.isEmpty(req.body.subject) || validator.isEmpty(req.body.desc)) {
+    return next({name:'Missing'})
+	} else if(!validator.isEmail(req.body.email)) {
     return next({name:'ValidatorError', type:'email', attempt: req.body.email})
   } else {
     authenticate()
@@ -400,7 +402,12 @@ exports.request_help = function(req, res, next) {
 exports.request_download = function(req, res, next) {
   if (req.body === null || !req.body) {
     return next({name:'Missing', provided: req})
-  } else if(!validator.isEmail(req.body.kind.email)) {
+  } else if(validator.isEmpty(req.body.kind.email)
+            || validator.isEmpty(req.body.kind.organization)
+            || validator.isEmpty(req.body.kind.title)
+            || validator.isEmpty(req.body.kind.use)) {
+    return next({name:'Missing'})
+	} else if(!req.body.kind.email || !validator.isEmail(req.body.kind.email)) {
     return next({name:'ValidatorError', type:'email', attempt: req.body.kind.email})
   } else {
     authenticate()
