@@ -291,7 +291,7 @@ exports.send_response = function(req, res, next) {
     return next({name:'Missing'})
 	} else if (req.body.email === false) {
     return next()
-	} else if(validator.isEmpty(req.body.ticket.user) || validator.isEmpty(req.body.ticket.subject) || validator.isEmpty(req.body.log.note)) {
+	} else if(!req.body.ticket.user || !req.body.ticket.subject || !req.body.log.note) {
     return next({name:'Missing'})
 	} else if(!validator.isEmail(req.body.ticket.user)) {
     return next({name:'ValidatorError', type:'email', attempt: req.body.ticket.user})
@@ -373,7 +373,7 @@ exports.send_reset = function(req, res, next) {
 exports.request_help = function(req, res, next) {
   if (req.body === null || !req.body) {
     return next({name:'Missing', provided: req})
-  } else if(validator.isEmpty(req.body.email) || validator.isEmpty(req.body.subject) || validator.isEmpty(req.body.desc)) {
+  } else if(!req.body.email || !req.body.subject || !req.body.desc) {
     return next({name:'Missing'})
 	} else if(!validator.isEmail(req.body.email)) {
     return next({name:'ValidatorError', type:'email', attempt: req.body.email})
@@ -402,12 +402,12 @@ exports.request_help = function(req, res, next) {
 exports.request_download = function(req, res, next) {
   if (req.body === null || !req.body) {
     return next({name:'Missing', provided: req})
-  } else if(validator.isEmpty(req.body.kind.email)
-            || validator.isEmpty(req.body.kind.organization)
-            || validator.isEmpty(req.body.kind.title)
-            || validator.isEmpty(req.body.kind.use)) {
+  } else if(!req.body.kind.email)
+            || !req.body.kind.organization)
+            || !req.body.kind.title)
+            || !req.body.kind.use) {
     return next({name:'Missing'})
-	} else if(!req.body.kind.email || !validator.isEmail(req.body.kind.email)) {
+	} else if(!validator.isEmail(req.body.kind.email)) {
     return next({name:'ValidatorError', type:'email', attempt: req.body.kind.email})
   } else {
     authenticate()
@@ -447,7 +447,7 @@ exports.send_download = function(req, res, next) {
     return next({name:'Missing'})
 	} else if (req.body.email === false) {
     return next()
-	} else if(validator.isEmpty(req.body.ticket.user) || validator.isEmpty(req.body.ticket.subject) || validator.isEmpty(req.body.log.note)) {
+	} else if(!req.body.ticket.user || !req.body.ticket.subject || !req.body.log.note) {
     return next({name:'Missing'})
 	} else if(!validator.isEmail(req.body.ticket.user)) {
     return next({name:'ValidatorError', type:'email', attempt: req.body.ticket.user})
