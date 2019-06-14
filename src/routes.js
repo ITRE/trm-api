@@ -34,6 +34,7 @@ module.exports = function(app) {
 
   app.route('/tickets')
     .post(tickets.new_request)
+    .put(email.request_help)
     .get(tickets.list_tickets)
 
   app.route('/tickets/:id')
@@ -58,7 +59,7 @@ module.exports = function(app) {
 
   app.route('/messages')
     //.put(files.get_version, email.send_download, (req, res) => res.status(200).send({status: "download sent"}) )
-    .post(email.request_download, (req, res) => res.status(200).send({status: "request sent", request: req.body.response}) )
+    .post(email.request_download)
     .get(email.fetch_responses, tickets.check_thread, tickets.list_tickets)
 
   app.route('/messages/:id')

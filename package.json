@@ -1,6 +1,12 @@
 {
   "name": "trm-api",
-  "version": "0.1.0",
+  "version": "1.0.0",
+  "author": "Devin Cremins (https://octopusoddments.com)",
+  "bugs": "https://github.com/ITRE/trm-api/issues",
+  "repository": "github:ITRE/trm-api",
+  "private": true,
+  "license": "MIT",
+  "homepage": "https://trm-api.herokuapp.com/",
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",

@@ -139,8 +139,17 @@ const parseEmail = (ticket, log) => {
       }
     }
   } else {
-    if(!validator.isEmail(parsedTicket.user)) {
-      return ['error', {name:'ValidatorError', type:'Email', attempt: parsedTicket.user}]
+    if(!validator.isEmail(parsedTicket.user) || parsedTicket.user == process.env.email) {
+      const email = regex_email_desc.exec(h2p(log.desc));
+      if (!email) {
+        return ['error', {name:'Missing', missing: 'Name of Requestor', provided:desc}]
+      } else if (!validator.isEmail(email[1])) {
+        return ['error', {name:'ValidatorError', type:'Email', attempt: parsedTicket.user}]
+      } else {
+        parsedTicket.user = email[1]
+        log.desc = log.desc.replace(`Email: ${parsedTicket.user}`, "")
+        log.desc = log.desc.replace('\n', ' ').replace('u','')
+      }
     }
 
     parsedTicket.kind = 'Other';

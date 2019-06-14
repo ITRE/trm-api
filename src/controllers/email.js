@@ -369,6 +369,33 @@ exports.send_reset = function(req, res, next) {
   })
 }
 
+// Request Help
+exports.request_help = function(req, res, next) {
+  if (req.body === null || !req.body) {
+    return next({name:'Missing', provided: req})
+  } else if(!validator.isEmail(req.body.email)) {
+    return next({name:'ValidatorError', type:'email', attempt: req.body.email})
+  } else {
+    authenticate()
+    .then(client => {
+      sendMail({
+        to: process.env.email,
+        from: req.body.email,
+        subject: req.body.subject,
+        message: `Email: ${req.body.email}<br /><br />${req.body.desc}`
+      }).then(response => {
+        return res.status(200).send({status: "request sent", request: req.body.response})
+      })
+      .catch(err => {
+        return next(err)
+      })
+    })
+    .catch(err => {
+      return next(err)
+    })
+  }
+}
+
 // Request Download
 exports.request_download = function(req, res, next) {
   if (req.body === null || !req.body) {
@@ -383,21 +410,19 @@ exports.request_download = function(req, res, next) {
         from: req.body.kind.email,
         subject: 'Request for TRM',
         message: `This is an automated request from the website for access to TRM.
-
-Name: ${req.body.kind.name}
-
-Email: ${req.body.kind.email}
-
-Organization: ${req.body.kind.organization}
-
-Title: ${req.body.kind.title}
-
-Use: ${req.body.kind.use}
-`
+          <br /><br />
+          Name: ${req.body.kind.name}
+          <br />
+          Email: ${req.body.kind.email}
+          <br />
+          Organization: ${req.body.kind.organization}
+          <br />
+          Title: ${req.body.kind.title}
+          <br />
+          Use: ${req.body.kind.use}
+          <br />`
       }).then(response => {
-        req.body.response = response
-        req.body.ticket.thread_id = response.threadId;
-        return next()
+        return res.status(200).send({status: "request sent", request: req.body.response})
       })
       .catch(err => {
         return next(err)
@@ -427,13 +452,13 @@ exports.send_download = function(req, res, next) {
         from: 'me',
         subject: req.body.ticket.subject,
         message: `Thank you for requesting the Triangle Regional Management tool.
-Attached are the requested files.
-
-Please do not respond to this email.
-
-Thank you!
-
-`,
+          <br />
+          Attached are the requested files.
+          <br />
+          Please do not respond to this email.
+          <br />
+          Thank you!
+          <br />`,
         thread_id: req.body.ticket.thread_id ? req.body.ticket.thread_id : ''
       }, req.body.files).then(response => {
         if (response[0] === 'success') {
@@ -476,15 +501,14 @@ exports.send_new_download = function(req, res, next) {
         from: 'me',
         subject: `New Download - Version ${req.body.files.version}`,
         message: `As a user of the Triangle Regional Management tool, we wanted to let you know about our latest update.
-
-Attached are the files for version ${req.body.files.version}.
-
-We hope you'll find it better than ever.
-
-
-Please do not respond to this email.
-
-`,
+          <br />
+          Attached are the files for version ${req.body.files.version}.
+          <br />
+          We hope you'll find it better than ever.
+          <br />
+          <br />
+          Please do not respond to this email.
+          <br />`,
         thread_id: ''
       }, req.body.files).then(response => {
         if (response[0] === 'success') {
